@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* All VoidShell chrome goes here. No hardcoded colours — use CSS vars so
+   users can override from a single place. */
+:root {
+  --vs-bg: transparent;
+  --vs-accent: #7c3aed;
+  --vs-text: #f8fafc;
+  --vs-muted: rgba(248, 250, 252, 0.4);
+  --vs-surface: rgba(15, 15, 15, 0.6);
+  --vs-border: rgba(255, 255, 255, 0.08);
+  --vs-radius: 8px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  background: var(--vs-bg);
+  color: var(--vs-text);
+  font-family: system-ui, sans-serif;
+  overflow: hidden;
+  user-select: none;
+}
+
+.voidshell-root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
