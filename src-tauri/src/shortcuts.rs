@@ -1,4 +1,4 @@
-use tauri::command;
+use tauri::{command, Manager};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
@@ -82,24 +82,75 @@ pub fn execute_ninja_action(command: String, action_type: AlternateActionType) -
     }
 }
 
+fn default_layout() -> Layout {
+    Layout {
+        version: 1,
+        grid_cols: 12,
+        grid_rows: 8,
+        shortcuts: vec![
+            Shortcut {
+                id: "default-explorer".to_string(),
+                name: "File Explorer".to_string(),
+                path: r"C:\Windows\explorer.exe".to_string(),
+                icon_url: None,
+                grid_x: 0,
+                grid_y: 0,
+                shortcut_type: ShortcutType::Standard,
+                alternate_actions: vec![],
+                children: None,
+            },
+            Shortcut {
+                id: "default-chrome".to_string(),
+                name: "Chrome".to_string(),
+                path: r"C:\Program Files\Google\Chrome\Application\chrome.exe".to_string(),
+                icon_url: None,
+                grid_x: 1,
+                grid_y: 0,
+                shortcut_type: ShortcutType::Standard,
+                alternate_actions: vec![
+                    AlternateAction {
+                        label: "Incognito".to_string(),
+                        command: r"C:\Program Files\Google\Chrome\Application\chrome.exe --incognito".to_string(),
+                        action_type: AlternateActionType::Exec,
+                    },
+                ],
+                children: None,
+            },
+            Shortcut {
+                id: "default-notepad".to_string(),
+                name: "Notepad".to_string(),
+                path: r"C:\Windows\notepad.exe".to_string(),
+                icon_url: None,
+                grid_x: 2,
+                grid_y: 0,
+                shortcut_type: ShortcutType::Standard,
+                alternate_actions: vec![],
+                children: None,
+            },
+        ],
+    }
+}
+
 #[command]
 pub fn save_layout(app: tauri::AppHandle, layout: Layout) -> Result<(), String> {
     let path = layout_path(&app)?;
     let json = serde_json::to_string_pretty(&layout).map_err(|e| e.to_string())?;
-    std::fs::write(path, json).map_err(|e| e.to_string())
+    let tmp = path.with_extension("json.tmp");
+    std::fs::write(&tmp, json).map_err(|e| e.to_string())?;
+    std::fs::rename(&tmp, &path).map_err(|e| e.to_string())
+}
+
+#[command]
+pub fn validate_path(path: String) -> bool {
+    std::fs::metadata(&path).is_ok()
 }
 
 #[command]
 pub fn load_layout(app: tauri::AppHandle) -> Result<Layout, String> {
     let path = layout_path(&app)?;
     if !path.exists() {
-        return Ok(Layout {
-            version: 1,
-            grid_cols: 12,
-            grid_rows: 8,
-            shortcuts: vec![],
-        });
+        return Ok(default_layout());
     }
-    let json = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
-    serde_json::from_str(&json).map_err(|e| e.to_string())
+    let json = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    Ok(serde_json::from_str(&json).unwrap_or_else(|_| default_layout()))
 }
